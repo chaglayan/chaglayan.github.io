@@ -1,65 +1,198 @@
 import { useState } from 'react';
-import { AppProvider } from './context/AppContext';
-import { BalanceOverview } from './components/BalanceOverview';
-import { WalletList } from './components/WalletList';
-import { ActionButtons } from './components/ActionButtons';
+import { AppProvider, useApp } from './context/AppContext';
+import { WelcomeScreen } from './components/WelcomeScreen';
+import { RegistrationFlow } from './components/RegistrationFlow';
+import { HomeScreen } from './components/HomeScreen';
+import { BottomNav } from './components/BottomNav';
 import { Notifications } from './components/Notifications';
-import { TopUpModal } from './components/TopUpModal';
-import { BuyModal } from './components/BuyModal';
-import { SellModal } from './components/SellModal';
-import { SwapModal } from './components/SwapModal';
+import { USDTopUpScreen } from './components/USDTopUpScreen';
+import { USDWithdrawScreen } from './components/USDWithdrawScreen';
+import { CreateWalletScreen } from './components/CreateWalletScreen';
+import { WalletDetailModal } from './components/WalletDetailModal';
+import { EnhancedBuyModal } from './components/EnhancedBuyModal';
+import { EnhancedSellModal } from './components/EnhancedSellModal';
+import { EnhancedSwapModal } from './components/EnhancedSwapModal';
+import { UserProfile } from './types';
+
+type Screen = 'welcome' | 'register' | 'login' | 'home' | 'topup' | 'withdraw-usd' | 'create-wallet' | 'settings';
 
 function AppContent() {
-  const [showTopUp, setShowTopUp] = useState(false);
-  const [showBuy, setShowBuy] = useState(false);
-  const [showSell, setShowSell] = useState(false);
-  const [showSwap, setShowSwap] = useState(false);
+  const { isAuthenticated, login, register } = useApp();
+  const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
+  const [activeTab, setActiveTab] = useState('home');
+  const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
+  const [showBuyModal, setShowBuyModal] = useState(false);
+  const [showSellModal, setShowSellModal] = useState(false);
+  const [showSwapModal, setShowSwapModal] = useState(false);
+  const [buyPreselectedCrypto, setBuyPreselectedCrypto] = useState<string | undefined>();
+  const [sellPreselectedWallet, setSellPreselectedWallet] = useState<string | undefined>();
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Header */}
-        <header className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Xcoins Exchange
-              </h1>
-              <p className="text-gray-600">Prototype - All transactions are simulated</p>
-            </div>
-            <div className="text-4xl">₿</div>
-          </div>
-        </header>
+  const handleRegister = () => {
+    setCurrentScreen('register');
+  };
 
-        {/* Main Content */}
-        <main>
-          <BalanceOverview />
+  const handleLogin = () => {
+    // Simulate login with demo account
+    const demoProfile: UserProfile = {
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'demo@xcoins.com',
+      phone: '+1 (555) 123-4567',
+      dateOfBirth: '1990-01-15',
+      address: '123 Main Street, New York, NY 10001',
+      tier: 'gold',
+    };
+    login(demoProfile);
+    setCurrentScreen('home');
+  };
 
-          <ActionButtons
-            onTopUp={() => setShowTopUp(true)}
-            onBuy={() => setShowBuy(true)}
-            onSell={() => setShowSell(true)}
-            onSwap={() => setShowSwap(true)}
+  const handleRegistrationComplete = (profile: UserProfile) => {
+    register(profile);
+    setCurrentScreen('home');
+  };
+
+  const handleNavigate = (destination: string) => {
+    switch (destination) {
+      case 'topup':
+        setCurrentScreen('topup');
+        break;
+      case 'withdraw-usd':
+        setCurrentScreen('withdraw-usd');
+        break;
+      case 'create-wallet':
+        setCurrentScreen('create-wallet');
+        break;
+      case 'home':
+        setCurrentScreen('home');
+        setActiveTab('home');
+        break;
+      case 'buy':
+        setBuyPreselectedCrypto(undefined);
+        setShowBuyModal(true);
+        break;
+      case 'sell':
+        setSellPreselectedWallet(undefined);
+        setShowSellModal(true);
+        break;
+      case 'swap':
+        setShowSwapModal(true);
+        break;
+      case 'settings':
+        setActiveTab('settings');
+        break;
+      default:
+        setCurrentScreen('home');
+    }
+  };
+
+  const handleWalletClick = (walletId: string) => {
+    setSelectedWallet(walletId);
+  };
+
+  const handleBuyFromWallet = (cryptoId: string) => {
+    setSelectedWallet(null);
+    setBuyPreselectedCrypto(cryptoId);
+    setShowBuyModal(true);
+  };
+
+  const handleSellFromWallet = (walletId: string) => {
+    setSelectedWallet(null);
+    setSellPreselectedWallet(walletId);
+    setShowSellModal(true);
+  };
+
+  const handleBottomNavClick = (tab: string) => {
+    setActiveTab(tab);
+    if (tab === 'home') {
+      setCurrentScreen('home');
+    } else if (tab === 'buy') {
+      setBuyPreselectedCrypto(undefined);
+      setShowBuyModal(true);
+    } else if (tab === 'sell') {
+      setSellPreselectedWallet(undefined);
+      setShowSellModal(true);
+    } else if (tab === 'swap') {
+      setShowSwapModal(true);
+    } else if (tab === 'settings') {
+      // Settings screen not implemented yet
+    }
+  };
+
+  // Pre-authentication screens
+  if (!isAuthenticated) {
+    if (currentScreen === 'register') {
+      return (
+        <div className="min-h-screen">
+          <RegistrationFlow
+            onComplete={handleRegistrationComplete}
+            onBack={() => setCurrentScreen('welcome')}
           />
+        </div>
+      );
+    }
 
-          <WalletList />
-        </main>
-
-        {/* Footer */}
-        <footer className="mt-8 text-center text-sm text-gray-500">
-          <p>Xcoins Exchange App - Prototype Version</p>
-          <p className="mt-1">All prices and transactions are simulated for demonstration purposes</p>
-        </footer>
-
-        {/* Modals */}
-        <TopUpModal isOpen={showTopUp} onClose={() => setShowTopUp(false)} />
-        <BuyModal isOpen={showBuy} onClose={() => setShowBuy(false)} />
-        <SellModal isOpen={showSell} onClose={() => setShowSell(false)} />
-        <SwapModal isOpen={showSwap} onClose={() => setShowSwap(false)} />
-
-        {/* Notifications */}
-        <Notifications />
+    return (
+      <div className="min-h-screen">
+        <WelcomeScreen onRegister={handleRegister} onLogin={handleLogin} />
       </div>
+    );
+  }
+
+  // Post-authentication screens
+  return (
+    <div className="ios-container min-h-screen flex flex-col">
+      {currentScreen === 'home' && (
+        <>
+          <HomeScreen onNavigate={handleNavigate} onWalletClick={handleWalletClick} />
+          <BottomNav activeTab={activeTab} onNavigate={handleBottomNavClick} />
+        </>
+      )}
+
+      {currentScreen === 'topup' && (
+        <USDTopUpScreen onBack={() => setCurrentScreen('home')} />
+      )}
+
+      {currentScreen === 'withdraw-usd' && (
+        <USDWithdrawScreen onBack={() => setCurrentScreen('home')} />
+      )}
+
+      {currentScreen === 'create-wallet' && (
+        <CreateWalletScreen
+          onBack={() => setCurrentScreen('home')}
+          onComplete={() => setCurrentScreen('home')}
+        />
+      )}
+
+      {/* Modals */}
+      {selectedWallet && (
+        <WalletDetailModal
+          walletId={selectedWallet}
+          onClose={() => setSelectedWallet(null)}
+          onBuyMore={handleBuyFromWallet}
+          onSell={handleSellFromWallet}
+        />
+      )}
+
+      {showBuyModal && (
+        <EnhancedBuyModal
+          onClose={() => setShowBuyModal(false)}
+          preselectedCrypto={buyPreselectedCrypto}
+        />
+      )}
+
+      {showSellModal && (
+        <EnhancedSellModal
+          onClose={() => setShowSellModal(false)}
+          preselectedWallet={sellPreselectedWallet}
+        />
+      )}
+
+      {showSwapModal && (
+        <EnhancedSwapModal onClose={() => setShowSwapModal(false)} />
+      )}
+
+      {/* Notifications */}
+      <Notifications />
     </div>
   );
 }

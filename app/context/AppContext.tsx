@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { AppState, Transaction, Notification, UserProfile, Wallet, ExternalWallet } from '../types';
-import { generateWalletAddress } from '../data/cryptocurrencies';
+import { generateWalletAddress, getCryptoById } from '../data/cryptocurrencies';
 
 interface AppContextType extends AppState {
   login: (profile: UserProfile) => void;
@@ -113,7 +113,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   const createWallet = (cryptoId: string): Wallet => {
-    const crypto = require('../data/cryptocurrencies').getCryptoById(cryptoId);
+    const crypto = getCryptoById(cryptoId);
     if (!crypto) throw new Error('Invalid crypto');
 
     const newWallet: Wallet = {
@@ -145,7 +145,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
           ),
         };
       } else {
-        const crypto = require('../data/cryptocurrencies').getCryptoById(cryptoId);
+        const crypto = getCryptoById(cryptoId);
         return {
           ...prev,
           wallets: [
